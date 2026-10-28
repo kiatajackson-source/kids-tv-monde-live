@@ -1,0 +1,37 @@
+[
+  {
+    "nom": "VIDÉO DE TEST",
+    "pays": "International",
+    "categorie": "Éducation",
+    "url": "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
+    "type": "test"
+  },
+  {
+    "nom": "RTNC",
+    "pays": "République démocratique du Congo",
+    "categorie": "Actualités",
+    "url": "",
+    "type": "officiel_a_configurer"
+  },
+  {
+    "nom": "Kids Éducation",
+    "pays": "International",
+    "categorie": "Kids",
+    "url": "",
+    "type": "flux_a_configurer"
+  },
+  {
+    "nom": "Musique jeunesse",
+    "pays": "International",
+    "categorie": "Musique",
+    "url": "",
+    "type": "flux_a_configurer"
+  },
+  {
+    "nom": "Découverte du monde",
+    "pays": "International",
+    "categorie": "Éducation",
+    "url": "",
+    "type": "flux_a_configurer"
+  }
+]

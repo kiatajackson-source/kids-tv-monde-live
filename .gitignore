@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+main_backup*.py
+abonnements.json
+.env
+*.log
