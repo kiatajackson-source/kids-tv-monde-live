@@ -3,6 +3,6 @@ services:
     name: kids-tv-monde-live
     runtime: python
     plan: free
-    buildCommand: "echo 'Preparation terminee'"
+    buildCommand: "pip install -r requirements.txt"
     startCommand: "python main.py"
     healthCheckPath: /
