@@ -46,6 +46,7 @@ input,select{max-width:100%}
 <button class="tab" onclick="showCategory('Éducation',this)">📚 Éducation</button>
 <button class="tab" onclick="showCategory('Musique',this)">🎵 Musique</button>
 <button class="tab" onclick="showCategory('Actualités',this)">🌍 Actualités</button>
+<button class="tab" onclick="showCategory('Documentaires',this)">🌍 Documentaires</button>
 <button class="tab" onclick="showCategory('Favoris',this)">⭐ Favoris</button>
 <button class="tab" onclick="showCategory('Abonnement',this)">💳 Abonnement</button>
 </nav>
