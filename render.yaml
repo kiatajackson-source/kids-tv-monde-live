@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: kids-tv-monde-live
+    runtime: python
+    plan: free
+    buildCommand: "echo 'Preparation terminee'"
+    startCommand: "python main.py"
+    healthCheckPath: /
