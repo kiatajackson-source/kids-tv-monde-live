@@ -495,15 +495,39 @@ function render(){
    "Documentaires":"🌍"
  };
 
+ const showFallbackLogo=()=>{
+   icon.innerHTML="";
+   const name=(c.name||"TV").trim();
+   const words=name.split(/\\s+/).filter(Boolean);
+   const initials=words.length>1
+     ? words.slice(0,2).map(w=>w[0]).join("").toUpperCase()
+     : name.slice(0,2).toUpperCase();
+
+   let hash=0;
+   for(let i=0;i<name.length;i++){
+     hash=(hash*31+name.charCodeAt(i))>>>0;
+   }
+
+   const badge=document.createElement("div");
+   badge.textContent=initials||"TV";
+   badge.style.cssText=
+     "width:100%;height:100%;display:flex;align-items:center;"+
+     "justify-content:center;color:white;font-size:19px;"+
+     "font-weight:900;border-radius:12px;text-shadow:0 2px 4px #000;"+
+     "background:linear-gradient(135deg,hsl("+
+     (hash%360)+",75%,42%),hsl("+((hash+65)%360)+",80%,25%))";
+   icon.appendChild(badge);
+ };
+
  if(c.logo){
    const img=document.createElement("img");
    img.src=c.logo;
-   img.alt="";
+   img.alt=c.name;
    img.loading="lazy";
-   img.onerror=()=>{icon.textContent=icons[c.category]||"📺";};
+   img.onerror=showFallbackLogo;
    icon.appendChild(img);
  }else{
-   icon.textContent=icons[c.category]||"📺";
+   showFallbackLogo();
  }
 
  const title=document.createElement("strong");
