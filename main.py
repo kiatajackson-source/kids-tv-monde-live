@@ -138,6 +138,126 @@ input,select{max-width:100%}
   max-width:190px; padding:8px; border-radius:8px;
 }
 
+
+/* === INTERFACE CINEMA STYLE STREAMING === */
+body {
+ background:#080808 !important;
+ color:#fff;
+}
+header {
+ text-align:left !important;
+ padding:22px 5% !important;
+ background:linear-gradient(90deg,#071b30,#101010 75%) !important;
+ border-bottom:1px solid #263b50;
+ box-shadow:none;
+}
+header h1 {
+ color:#54c9ff;
+ font-size:clamp(25px,4vw,38px);
+}
+header p {color:#ccc}
+nav {
+ background:#101010 !important;
+ padding:14px 5% !important;
+ border-bottom:1px solid #292929;
+}
+.tab {
+ background:#222 !important;
+ border:1px solid #444 !important;
+ border-radius:7px !important;
+}
+.tab.active {
+ background:#078fe8 !important;
+ border-color:#54c9ff !important;
+}
+main {max-width:1500px;padding:20px 5%}
+h2 {font-size:24px;color:#fff}
+.player {
+ border-radius:12px;
+ border:1px solid #333;
+}
+.search {
+ background:#181818;
+ border:1px solid #444;
+}
+.grid {
+ display:flex !important;
+ gap:14px !important;
+ overflow-x:auto;
+ overflow-y:hidden;
+ padding:12px 2px 22px;
+ scroll-snap-type:x mandatory;
+ scrollbar-width:thin;
+}
+.channel {
+ flex:0 0 175px;
+ width:175px;
+ min-height:185px;
+ border-radius:10px;
+ background:#181818;
+ border:1px solid #303030;
+ padding:13px;
+ scroll-snap-align:start;
+ transition:transform .2s,border-color .2s;
+}
+.channel:hover {
+ transform:scale(1.045);
+ border-color:#36bfff;
+ box-shadow:0 8px 25px #0009;
+}
+.channel-icon {
+ width:100%;
+ height:95px;
+ border-radius:8px;
+ background:linear-gradient(135deg,#073e69,#087fc2);
+}
+.channel strong {font-size:14px}
+.channel small {font-size:12px}
+.panel {
+ background:#171717;
+ border-color:#333;
+}
+.player-tools {background:#171717}
+footer {background:#080808}
+.netflix-hero {
+ min-height:260px;
+ margin:20px auto 28px;
+ padding:30px;
+ display:flex;
+ flex-direction:column;
+ justify-content:flex-end;
+ align-items:flex-start;
+ border-radius:15px;
+ background:
+ linear-gradient(90deg,#061629 0%,#061629dd 40%,#06162922 100%),
+ linear-gradient(135deg,#07538b,#101010 75%);
+ border:1px solid #245579;
+ box-shadow:0 12px 35px #0008;
+}
+.netflix-hero .hero-label {
+ color:#65d4ff;
+ font-weight:bold;
+ letter-spacing:2px;
+ font-size:12px;
+}
+.netflix-hero h2 {
+ font-size:clamp(27px,5vw,43px);
+ margin:12px 0;
+}
+.netflix-hero p {color:#e0e0e0;max-width:550px}
+.netflix-hero button {
+ background:#078fe8;
+ border:0;
+ border-radius:7px;
+ padding:13px 24px;
+ font-size:15px;
+}
+@media(min-width:700px) {
+ .channel {flex-basis:205px;width:205px}
+ .channel-icon {height:115px}
+ .netflix-hero {min-height:340px;padding:42px}
+}
+
 </style>
 </head>
 <body>
@@ -154,6 +274,14 @@ input,select{max-width:100%}
 <button class="tab" onclick="showCategory('Favoris',this)">⭐ Favoris</button>
 <button class="tab" onclick="showCategory('Abonnement',this)">💳 Abonnement</button>
 </nav>
+
+<section class="netflix-hero">
+ <span class="hero-label">JACKSON NGITUKA TV MONDE</span>
+ <h2 id="heroTitle">Bienvenue dans votre télévision mondiale</h2>
+ <p id="heroDescription">Découvrez vos chaînes préférées, les programmes éducatifs et les divertissements pour toute la famille.</p>
+ <button onclick="playFeatured()">▶ Regarder maintenant</button>
+</section>
+
 <main>
 <h2 id="heading">🧒 Chaînes pour enfants</h2>
 <div class="player">
@@ -200,6 +328,22 @@ input,select{max-width:100%}
 <script>
 let channels = [];
 
+function updateFeatured(){
+ const c = channels.find(x => x.url) || channels[0];
+ if(!c) return;
+ window.featuredChannel = c;
+ document.getElementById("heroTitle").textContent = c.name;
+ document.getElementById("heroDescription").textContent =
+   "📺 " + c.country + " · " + c.category +
+   " — Découvrez cette chaîne dans JACKSON NGITUKA TV MONDE.";
+}
+function playFeatured(){
+ if(window.featuredChannel) play(window.featuredChannel);
+ else document.getElementById("message").textContent =
+   "Le catalogue est encore en cours de chargement.";
+}
+
+
 fetch("/chaines.json")
   .then(response => {
     if (!response.ok) throw new Error("Catalogue indisponible");
@@ -214,6 +358,7 @@ fetch("/chaines.json")
       logo: c.logo || ""
     }));
     render();
+    updateFeatured();
   })
   .catch(error => {
     document.getElementById("channels").textContent =
