@@ -312,6 +312,7 @@ footer {background:#080808}
   </label>
 </div>
 <div id="message">Choisis une chaîne disposant d'un flux vidéo autorisé pour commencer.</div>
+<div id="networkStatus" style="padding:10px 14px;background:#102b48;color:#8bdcff;font-size:13px">📶 Analyse de la connexion...</div>
 </div>
 <input id="search" class="search" placeholder="🔎 Rechercher une chaîne..." oninput="render()">
 <div id="channels" class="grid"></div>
@@ -554,6 +555,106 @@ function render(){
  });
  if(!box.children.length&&current!=="Abonnement")box.textContent="Aucune chaîne dans cette catégorie pour le moment.";
 }
+
+// === GESTION INTELLIGENTE DU RESEAU ===
+
+function networkProfile(){
+ const c=navigator.connection ||
+        navigator.mozConnection ||
+        navigator.webkitConnection;
+
+ if(!c) return {
+   type:"inconnu",
+   speed:0,
+   save:false,
+   maxHeight:720
+ };
+
+ const speed=Number(c.downlink||0);
+ const effective=c.effectiveType||"";
+ const save=!!c.saveData;
+ const type=c.type||"inconnu";
+
+ let maxHeight=1080;
+
+ if(save || effective==="slow-2g" || effective==="2g" ||
+    (speed>0 && speed<0.7)){
+   maxHeight=360;
+ }else if(effective==="3g" || (speed>0 && speed<1.5)){
+   maxHeight=480;
+ }else if(speed>0 && speed<3){
+   maxHeight=720;
+ }
+
+ return {type,speed,save,maxHeight};
+}
+
+function showNetworkStatus(){
+ const n=networkProfile();
+ const box=document.getElementById("networkStatus");
+ if(!box) return;
+
+ let type="Connexion non identifiée";
+ if(n.type==="wifi") type="Wi-Fi";
+ if(n.type==="cellular") type="Réseau mobile";
+
+ let speed=n.speed ? " · Débit estimé "+n.speed+" Mb/s" : "";
+ box.textContent="📶 "+type+speed+
+   " · Qualité maximale conseillée : "+n.maxHeight+"p"+
+   " · VPN : non vérifiable";
+}
+
+function adaptPlayerNetwork(hls){
+ if(!hls || !hls.levels || !hls.levels.length) return;
+
+ const profile=networkProfile();
+ const allowed=hls.levels
+   .map((level,index)=>({index,height:Number(level.height||0)}))
+   .filter(level=>!level.height || level.height<=profile.maxHeight);
+
+ hls.autoLevelCapping=allowed.length
+   ? allowed[allowed.length-1].index
+   : 0;
+
+ hls.startLevel=-1;
+ hls.currentLevel=-1;
+
+ showNetworkStatus();
+}
+
+function activateNetworkMonitor(){
+ const c=navigator.connection ||
+        navigator.mozConnection ||
+        navigator.webkitConnection;
+
+ showNetworkStatus();
+
+ if(c){
+   c.addEventListener("change",()=>{
+     showNetworkStatus();
+     if(window.currentHls){
+       adaptPlayerNetwork(window.currentHls);
+     }
+   });
+ }
+}
+
+window.addEventListener("online",()=>{
+ const h=window.currentHls;
+ if(h){
+   h.startLoad();
+   document.getElementById("message").textContent=
+     "Connexion rétablie. Reprise du flux...";
+ }
+ showNetworkStatus();
+});
+
+window.addEventListener("offline",()=>{
+ document.getElementById("message").textContent=
+   "Connexion interrompue. En attente du retour d'Internet...";
+});
+
+
 function play(c){
  const video=document.getElementById("video");
  document.getElementById("message").textContent="Chargement : "+c.name;
@@ -573,21 +674,59 @@ function play(c){
  if(window.Hls && Hls.isSupported()){
    const hls=new Hls({
      enableWorker:true,
-     maxBufferLength:20
+     lowLatencyMode:false,
+
+     // Tampon pour stabiliser la lecture
+     maxBufferLength:35,
+     maxMaxBufferLength:90,
+     backBufferLength:30,
+     maxBufferSize:60*1000*1000,
+
+     // Reconnexion automatique
+     manifestLoadingMaxRetry:5,
+     manifestLoadingRetryDelay:1000,
+     levelLoadingMaxRetry:6,
+     levelLoadingRetryDelay:1000,
+     fragLoadingMaxRetry:8,
+     fragLoadingRetryDelay:1000,
+     fragLoadingMaxRetryTimeout:64000,
+
+     // Adaptation automatique
+     startLevel:-1,
+     capLevelToPlayerSize:true,
+     abrEwmaDefaultEstimate:1000000
    });
    window.currentHls=hls;
    hls.loadSource(c.url);
    hls.attachMedia(video);
    hls.on(Hls.Events.MANIFEST_PARSED,()=>{
+     adaptPlayerNetwork(hls);
      loadPlayerTracks(hls);
      document.getElementById("message").textContent="Lecture : "+c.name;
      video.play().catch(()=> {
        document.getElementById("message").textContent="Appuie sur Lecture pour démarrer.";
      });
    });
+   let recoveries=0;
+   hls.on(Hls.Events.FRAG_BUFFERED,()=>{
+     recoveries=0;
+   });
    hls.on(Hls.Events.ERROR,(event,data)=>{
-     if(data.fatal){
-       document.getElementById("message").textContent="Lecture impossible. Vérifie Internet et le flux vidéo.";
+     if(!data.fatal) return;
+
+     if(data.type===Hls.ErrorTypes.NETWORK_ERROR && recoveries<8){
+       recoveries++;
+       document.getElementById("message").textContent=
+         "Connexion instable. Nouvelle tentative "+recoveries+"/8...";
+       setTimeout(()=>hls.startLoad(),1500);
+     }else if(data.type===Hls.ErrorTypes.MEDIA_ERROR && recoveries<8){
+       recoveries++;
+       document.getElementById("message").textContent=
+         "Réparation du lecteur vidéo...";
+       hls.recoverMediaError();
+     }else{
+       document.getElementById("message").textContent=
+         "Flux indisponible. Vérifie ta connexion ou essaie une autre chaîne.";
        hls.destroy();
        window.currentHls=null;
      }
@@ -603,6 +742,7 @@ function play(c){
 }
 
 initPlayerLanguage();
+activateNetworkMonitor();
 render();
 </script>
 </body>
